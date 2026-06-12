@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECG Expert</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+:root{--font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--r:6px;--rl:10px;--tr:0.16s ease;}
+[data-theme="light"]{
+  --bg:#f4f5f7;--sf:#fff;--sf2:#f0f1f4;--sf3:#e6e8ed;
+  --bd:#e2e4ea;--bd2:#c8cad4;
+  --t:#181b2a;--t2:#4a4f6a;--t3:#8a8fa8;--t4:#b8bccf;
+  --ac:#2563eb;--acb:#eff6ff;--acbd:#bfdbfe;
+  --gr:#15803d;--grb:#f0fdf4;--grbd:#bbf7d0;
+  --rd:#dc2626;--rdb:#fef2f2;--rdbd:#fecaca;
+  --am:#b45309;--amb:#fffbeb;--ambd:#fde68a;
+  --pu:#6d28d9;--pub:#f5f3ff;--pubd:#ddd6fe;
+  --bl:#0369a1;--blb:#f0f9ff;--blbd:#bae6fd;
+  --te:#0f766e;--teb:#f0fdfa;--tebd:#99f6e4;
+  --wv:#2563eb;--wg:#e2e4ea;--wgm:#c8cad4;
+  --sh:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+}
+[data-theme="dark"]{
+  --bg:#0d1117;--sf:#161b22;--sf2:#21262d;--sf3:#30363d;
+  --bd:#30363d;--bd2:#444c56;
+  --t:#e6edf3;--t2:#8b949e;--t3:#6e7681;--t4:#444c56;
+  --ac:#58a6ff;--acb:rgba(88,166,255,0.10);--acbd:rgba(88,166,255,0.25);
+  --gr:#3fb950;--grb:rgba(63,185,80,0.10);--grbd:rgba(63,185,80,0.25);
+  --rd:#f85149;--rdb:rgba(248,81,73,0.10);--rdbd:rgba(248,81,73,0.25);
+  --am:#d29922;--amb:rgba(210,153,34,0.10);--ambd:rgba(210,153,34,0.25);
+  --pu:#a371f7;--pub:rgba(163,113,247,0.10);--pubd:rgba(163,113,247,0.25);
+  --bl:#58a6ff;--blb:rgba(88,166,255,0.10);--blbd:rgba(88,166,255,0.20);
+  --te:#39d4b5;--teb:rgba(57,212,181,0.10);--tebd:rgba(57,212,181,0.25);
+  --wv:#58a6ff;--wg:#21262d;--wgm:#30363d;
+  --sh:0 1px 3px rgba(0,0,0,0.4);
+}
+body{font-family:var(--font);background:var(--bg);color:var(--t);min-height:100vh;display:flex;flex-direction:column;transition:background var(--tr),color var(--tr);}
+
+/* Top bar */
+.tb{height:64px;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 28px;gap:14px;position:sticky;top:0;z-index:300;transition:background var(--tr);}
+.tb-logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:15px;font-weight:500;color:var(--ac);letter-spacing:0.03em;cursor:pointer;flex-shrink:0;}
+.tb-logo:hover{opacity:0.8;}
+.tb-bc{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--t3);flex:1;}
+.tb-bc-sep{color:var(--bd2);}
+.tb-bc-d{color:var(--t2);font-weight:500;}
+.tb-r{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
+.ib{width:32px;height:32px;border:1px solid var(--bd2);background:var(--sf2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);transition:all var(--tr);}
+.ib:hover{background:var(--sf3);color:var(--t);}
+
+/* Pages */
+.page{display:none;}
+.page.active{display:flex;flex-direction:column;flex:1;}
+
+/* Welcome */
+.ww{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 40px;gap:56px;}
+.wh{text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px;}
+.wh-ecg{width:380px;height:64px;opacity:0.15;}
+.wh-title{font-size:36px;font-weight:600;letter-spacing:-0.02em;color:var(--t);}
+.wh-sub{font-size:15px;color:var(--t3);line-height:1.7;max-width:500px;}
+.dc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:960px;}
+.dc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:32px 28px;cursor:pointer;transition:all var(--tr);display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;}
+.dc:hover:not(.dis){border-color:var(--bd2);box-shadow:var(--sh);transform:translateY(-2px);}
+.dc.dis{cursor:not-allowed;opacity:0.5;}
+.dc-ico{width:48px;height:48px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;}
+.dc-lbl{font-size:17px;font-weight:600;color:var(--t);}
+.dc-sub{font-size:13px;color:var(--t3);line-height:1.6;}
+.dc-arrow{margin-top:auto;font-size:12px;color:var(--t4);display:flex;align-items:center;gap:4px;}
+.dc-cnt{font-family:var(--mono);font-size:12px;color:var(--t4);}
+.dc-pill{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;background:var(--sf3);color:var(--t4);border-radius:99px;padding:3px 9px;border:1px solid var(--bd);}
+
+/* Domain layout */
+.dp{flex:1;display:grid;grid-template-columns:260px 1fr;min-height:0;}
+
+/* Sidebar */
+.sb{background:var(--sf);border-right:1px solid var(--bd);height:calc(100vh - 64px);position:sticky;top:64px;display:flex;flex-direction:column;overflow:hidden;transition:background var(--tr);}
+.sb-s{padding:11px 12px;border-bottom:1px solid var(--bd);}
+.sb-sw{position:relative;}
+.sb-si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t4);pointer-events:none;}
+.sb-in{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r);color:var(--t);font-family:var(--mono);font-size:11.5px;padding:6px 9px 6px 29px;outline:none;transition:border-color var(--tr);}
+.sb-in::placeholder{color:var(--t4);}
+.sb-in:focus{border-color:var(--ac);}
+.sb-b{overflow-y:auto;flex:1;padding-bottom:12px;}
+.sb-g{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:0.1em;color:var(--t4);text-transform:uppercase;padding:12px 12px 4px;}
+.sb-i{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;border-left:2px solid transparent;transition:background var(--tr),border-color var(--tr);}
+.sb-i:hover{background:var(--sf2);}
+.sb-i.act{background:var(--acb);border-left-color:var(--ac);}
+.sb-i.act .sb-ab{color:var(--ac);}
+.sb-ab{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--t3);min-width:42px;}
+.sb-nb{font-size:11.5px;color:var(--t2);flex:1;line-height:1.3;}
+.sb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* Main */
+.mp{overflow-y:auto;background:var(--bg);}
+.es{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 64px);gap:10px;color:var(--t4);}
+.es p{font-size:13px;}
+
+/* Detail */
+.dw{padding:36px 56px;max-width:1200px;}
+.dh{display:flex;align-items:flex-start;margin-bottom:20px;}
+.dh-l{display:flex;flex-direction:column;gap:4px;}
+.dh-ab{font-family:var(--mono);font-size:34px;font-weight:500;color:var(--t);line-height:1;}
+.dh-nm{font-size:13px;color:var(--t3);line-height:1.4;}
+.cb{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:0.06em;padding:3px 9px;border-radius:99px;border:1px solid;margin-top:4px;}
+
+/* Stat strip */
+.ss{display:flex;background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:18px;overflow:hidden;box-shadow:var(--sh);}
+.si{flex:1;padding:11px 15px;border-right:1px solid var(--bd);display:flex;flex-direction:column;gap:3px;min-width:0;}
+.si:last-child{border-right:none;}
+.sl{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--t4);}
+.sv{font-family:var(--mono);font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sn{color:var(--gr);}.sf{color:var(--am);}.ss2{color:var(--bl);}.sv2{color:var(--pu);}.sw{color:var(--am);}.sd{color:var(--rd);}.si2{color:var(--te);}.snt{color:var(--t2);}
+
+/* Image accordion */
+.img-stack{display:flex;flex-direction:column;gap:0;border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:18px;overflow:hidden;box-shadow:var(--sh);}
+.img-section{display:flex;flex-direction:column;}
+.img-section+.img-section{border-top:1px solid var(--bd);}
+.img-label{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;color:var(--t3);padding:10px 14px;background:var(--sf2);cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;transition:background var(--tr);}
+.img-label:hover{background:var(--sf3);}
+.img-label-chevron{transition:transform 0.22s ease;color:var(--t4);flex-shrink:0;}
+.img-label-chevron.open{transform:rotate(180deg);}
+.img-body{overflow:hidden;max-height:0;transition:max-height 0.3s ease;}
+.img-body.open{max-height:800px;}
+.img-body img{width:100%;height:auto;display:block;max-height:480px;object-fit:contain;background:var(--sf);}
+.img-none{padding:18px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--t4);background:var(--sf);}
+
+/* Criteria */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+.cc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:13px 14px;box-shadow:var(--sh);}
+.cc.full{grid-column:1/-1;}
+.ch2{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--t3);margin-bottom:9px;}
+.cd{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.cl2{list-style:none;display:flex;flex-direction:column;gap:5px;}
+.ci{display:flex;gap:7px;font-size:12.5px;color:var(--t);line-height:1.55;}
+.cb2{font-family:var(--mono);font-size:11px;color:var(--t4);flex-shrink:0;margin-top:2px;}
+
+/* Alerts */
+.al{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+.a{display:flex;gap:9px;padding:9px 13px;border-radius:var(--r);font-size:12.5px;line-height:1.55;align-items:flex-start;border:1px solid;}
+.a.w{background:var(--amb);border-color:var(--ambd);}
+.a.d{background:var(--rdb);border-color:var(--rdbd);}
+.a.i{background:var(--blb);border-color:var(--blbd);}
+.ai{flex-shrink:0;}
+.a.w .ai{color:var(--am);}.a.d .ai{color:var(--rd);}.a.i .ai{color:var(--bl);}
+
+/* Checklist */
+.ck{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;margin-bottom:18px;box-shadow:var(--sh);}
+.ckh{padding:9px 14px;background:var(--sf2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;}
+.ckt{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--t3);letter-spacing:0.05em;}
+.pr2{display:flex;align-items:center;gap:8px;}
+.pb{width:80px;height:3px;background:var(--sf3);border-radius:99px;overflow:hidden;}
+.pf{height:100%;border-radius:99px;background:var(--gr);transition:width 0.3s;}
+.pt{font-family:var(--mono);font-size:10px;color:var(--t4);}
+.ckb{padding:7px 10px;display:flex;flex-direction:column;gap:2px;}
+.cr{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:var(--r);cursor:pointer;transition:background var(--tr);}
+.cr:hover{background:var(--sf2);}
+.cr.dn{opacity:0.5;}
+.cx{width:15px;height:15px;border:1px solid var(--bd2);border-radius:4px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;background:var(--sf2);transition:all var(--tr);}
+.cr.dn .cx{background:var(--gr);border-color:var(--gr);}
+.cx svg{display:none;}
+.cr.dn .cx svg{display:block;}
+.ct{display:flex;flex-direction:column;gap:1px;}
+.cl3{font-size:12.5px;color:var(--t);}
+.cr.dn .cl3{text-decoration:line-through;color:var(--t3);}
+.cs{font-family:var(--mono);font-size:10px;color:var(--t4);}
+.ckf{padding:7px 14px;border-top:1px solid var(--bd);}
+.br{font-family:var(--mono);font-size:10.5px;padding:4px 10px;background:transparent;border:1px solid var(--bd2);border-radius:var(--r);color:var(--t3);cursor:pointer;transition:all var(--tr);}
+.br:hover{background:var(--sf2);color:var(--t);}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--sf3);border-radius:99px;}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- TOP BAR -->
+<header class="tb">
+  <div class="tb-logo" onclick="goHome()">
+    <svg width="26" height="20" viewBox="0 0 26 20" fill="none">
+      <polyline points="0,10 4,10 7,2 10,18 13,7 16,13 19,10 26,10" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    ECG Expert
+  </div>
+  <div class="tb-bc" id="bc" style="display:none;">
+    <span class="tb-bc-sep">›</span>
+    <span class="tb-bc-d" id="bcD"></span>
+  </div>
+  <div class="tb-r">
+    <button class="ib" id="themeBtn" title="Toggle theme">
+      <svg id="themeIcon" width="15" height="15" viewBox="0 0 16 16" fill="none">
+        <path d="M8 2v1M8 13v1M2 8H1M15 8h-1M4.22 4.22l-.71-.71M12.49 12.49l-.71-.71M12.49 4.22l.71-.71M3.51 12.49l-.71.71M11 8a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<!-- WELCOME -->
+<div class="page active" id="pageWelcome">
+  <div class="ww">
+    <div class="wh">
+      <svg class="wh-ecg" viewBox="0 0 300 52" fill="none">
+        <polyline points="0,26 18,26 28,6 38,46 48,16 56,36 64,26 88,26 98,26 108,6 118,46 128,16 136,36 144,26 168,26 178,26 188,6 198,46 208,16 216,36 224,26 248,26 258,26 268,6 278,46 288,16 296,36 300,26"
+          stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1 class="wh-title">ECG Expert</h1>
+      <p class="wh-sub">A reference tool for ECG interpretation criteria and annotation checklists. Select a domain to begin.</p>
+    </div>
+    <div class="dc-grid">
+      <div class="dc" onclick="enterDomain('rhythm')">
+        <div class="dc-ico" style="background:var(--acb);">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <polyline points="1,10 3.5,10 5.5,3 7.5,17 9.5,7 11,13 12.5,10 19,10" stroke="var(--ac)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="dc-lbl">Rhythm &amp; Conduction</div>
+        <div class="dc-sub">Arrhythmia and conduction abnormality interpretation criteria.</div>
+        <div class="dc-cnt">20 classes</div>
+        <div class="dc-arrow">Get started <span>→</span></div>
+      </div>
+      <div class="dc dis">
+        <div class="dc-pill">Coming soon</div>
+        <div class="dc-ico" style="background:var(--rdb);">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 3l1.8 4.5H16l-3.4 2.6 1.3 4.2L10 11.8l-3.9 2.5 1.3-4.2L4 7.5h4.2z" stroke="var(--rd)" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="dc-lbl">STEMI &amp; Equivalents</div>
+        <div class="dc-sub">ST-elevation MI and equivalent patterns.</div>
+        <div class="dc-cnt">Coming soon</div>
+      </div>
+      <div class="dc dis">
+        <div class="dc-pill">Coming soon</div>
+        <div class="dc-ico" style="background:var(--teb);">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect x="3" y="6" width="14" height="11" rx="1.5" stroke="var(--te)" stroke-width="1.4"/>
+            <path d="M7 9h2.5l1.5 3 1.5-5 1.5 2H15" stroke="var(--te)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="dc-lbl">Structural Heart</div>
+        <div class="dc-sub">LVH, RVH, chamber enlargement ECG criteria.</div>
+        <div class="dc-cnt">Coming soon</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RHYTHM PAGE -->
+<div class="page" id="pageRhythm">
+  <div class="dp">
+    <aside class="sb">
+      <div class="sb-s">
+        <div class="sb-sw">
+          <span class="sb-si"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><line x1="11" y1="11" x2="15" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          <input class="sb-in" id="searchInput" type="text" placeholder="SR, VT, flutter…" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div class="sb-b" id="navList"></div>
+    </aside>
+    <main class="mp" id="mainPanel">
+      <div class="es">
+        <svg width="34" height="26" viewBox="0 0 34 26" fill="none" opacity="0.22">
+          <polyline points="0,13 4,13 7,3 10,23 13,9 16,17 19,13 34,13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p>Select a rhythm from the sidebar</p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// GROUPS
+// ══════════════════════════════════════════════
+const GROUPS = [
+  {id:'sr',      label:'Sinus rhythm'},
+  {id:'supra',   label:'Supraventricular'},
+  {id:'vent',    label:'Ventricular'},
+  {id:'junct',   label:'Junctional'},
+  {id:'brady',   label:'Bradycardia / AV block'},
+  {id:'ectopic', label:'Ectopic beats'},
+  {id:'paced',   label:'Paced rhythm'},
+  {id:'wpw',     label:'Pre-excitation'},
+  {id:'cond',    label:'Conduction abnormality'}
+];
+
+// ══════════════════════════════════════════════
+// DRIVE IMAGE HELPER
+// ══════════════════════════════════════════════
+// Primary: thumbnail endpoint (more reliable, bypasses virus-scan gate)
+function driveImg(id){ return `https://drive.google.com/thumbnail?id=${id}&sz=w1200`; }
+// Fallback chain: thumbnail → lh3 → "unavailable"
+function driveFallback(img, id){
+  if(!img.dataset.tried){
+    img.dataset.tried='1';
+    img.src=`https://lh3.googleusercontent.com/d/${id}`;
+  } else {
+    img.style.display='none';
+    const fb=img.nextElementSibling;
+    if(fb) fb.style.display='flex';
+  }
+}
+
+// ══════════════════════════════════════════════
+// COLOR MAP
+// ══════════════════════════════════════════════
+const CM = {
+  green: {v:'--gr',bg:'--grb',b:'--grbd'},
+  amber: {v:'--am',bg:'--amb',b:'--ambd'},
+  red:   {v:'--rd',bg:'--rdb',b:'--rdbd'},
+  purple:{v:'--pu',bg:'--pub',b:'--pubd'},
+  blue:  {v:'--bl',bg:'--blb',b:'--blbd'},
+  teal:  {v:'--te',bg:'--teb',b:'--tebd'}
+};
+function cv(c){return `var(${CM[c]?.v||'--ac'})`;}
+function cb(c){return `var(${CM[c]?.bg||'--acb'})`;}
+function cbo(c){return `var(${CM[c]?.b||'--acbd'})`;}
+const DC = ['--bl','--te','--pu','--am','--gr'];
+
+// ══════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════
+const RHYTHMS = [
+  // ── SR ──
+  {id:'SR',abbr:'SR',group:'sr',name:'Sinus Rhythm',cat:'Sinus rhythm',col:'green',
+   rate:'60–100 bpm',rt:'sn',
+   params:[{l:'P-wave axis',v:'0–75°',t:'sn'},{l:'PR interval',v:'120–200 ms',t:'sn'},{l:'QRS duration',v:'< 120 ms',t:'sn'}],
+   imgs:{ecg:'1OSu4PIClJqBfLEMQSc2zdR9Vo5TtKmAG',strip:'1kcbTB-5yiy794dmc_fcZI8bpdWHdDtL6'},
+   crit:{
+     'P-wave characteristics':['A P wave precedes every QRS complex','P-wave morphology is consistent beat-to-beat within the same lead','P-wave axis 0–75°: upright in leads I, II, aVF; inverted in aVR','PR interval 120–200 ms, constant'],
+     'QRS and rhythm':['QRS duration < 120 ms','PP and RR intervals are regular','P:QRS ratio is 1:1'],
+     'Included variants':['Normal sinus rhythm (60–100 bpm)','Sinus bradycardia: rate < 60 bpm, all other criteria unchanged','Sinus tachycardia: rate > 100 bpm, all other criteria unchanged','Sinus arrhythmia: identical P-wave morphology and PR interval, but PP/RR intervals vary cyclically with respiration']
+   },
+   cl:[{id:'sr1',t:'Does a P wave precede every QRS complex?',s:'P:QRS = 1:1'},{id:'sr2',t:'Is P-wave morphology consistent within the same lead?',s:'Uniform P waves'},{id:'sr3',t:'Is the P-wave axis within 0–75°?',s:'Upright in II, inverted in aVR'},{id:'sr4',t:'Is the PR interval 120–200 ms and constant?',s:'Beat-to-beat variation < 20 ms'},{id:'sr5',t:'Is QRS duration < 120 ms?',s:'If no bundle branch block'}],
+   alerts:[{t:'i',m:'Sinus bradycardia, sinus tachycardia, and sinus arrhythmia are all classified under SR. Consistency of P-wave morphology and PR interval — not heart rate — is the key criterion.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part I)'},
+
+  // ── AF ──
+  {id:'AF',abbr:'AF',group:'supra',name:'Atrial Fibrillation',cat:'Supraventricular',col:'amber',
+   rate:'Variable ventricular response',rt:'sv2',
+   params:[{l:'P waves',v:'Absent (f waves)',t:'sw'},{l:'RR interval',v:'Irregularly irregular',t:'sw'},{l:'QRS duration',v:'< 120 ms*',t:'snt'}],
+   imgs:{ecg:'17ix5KQ5fJcRRszfYHKEl5GaOx3G3yVyQ',strip:'1Xa3EEOXa9X9P9l9O6HP7GNv2I4yZg0bV'},
+   crit:{
+     'Fibrillatory baseline':['No discrete P waves; instead, chaotic fibrillatory waves (f waves) at 350–600 bpm','Irregular baseline oscillation most prominent in V1'],
+     'RR interval and QRS':['RR intervals are completely irregular (irregularly irregular)','QRS duration < 120 ms when atrioventricular conduction is normal','QRS may be widened if bundle branch block or pre-excitation is present'],
+     'Special patterns':['AF with a regular, slow ventricular response suggests concomitant complete AV block','Rapid, wide-complex AF in the setting of WPW syndrome requires special attention']
+   },
+   cl:[{id:'af1',t:'Are discrete P waves absent?',s:'Fibrillatory baseline only'},{id:'af2',t:'Are RR intervals completely irregular?',s:'Irregularly irregular'},{id:'af3',t:'Are fibrillatory waves (f waves) visible in V1 and lead II?',s:'Baseline oscillation'},{id:'af4',t:'Has the ventricular rate been assessed?',s:'Controlled < 100 / Uncontrolled ≥ 100 bpm'},{id:'af5',t:'Does the RR interval suddenly become completely regular?',s:'If regular → suspect AF with complete AV block'}],
+   alerts:[{t:'w',m:'AF with a slow but completely regular RR interval should be interpreted as AF with complete AV block.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part II)'},
+
+  // ── AFL ──
+  {id:'AFL',abbr:'AFL',group:'supra',name:'Atrial Flutter',cat:'Supraventricular',col:'amber',
+   rate:'Atrial 250–350 bpm',rt:'sf',
+   params:[{l:'Ventricular rate',v:'125–175 bpm (2:1)',t:'sf'},{l:'AV conduction',v:'2:1 to 4:1 (variable)',t:'sv2'},{l:'Isoelectric baseline',v:'Absent',t:'sw'}],
+   imgs:{ecg:'1XmJ-TK28iI-kUsSvLSKJs_vzotJv2yEb',strip:'1cI-dSn4QAXXfOkhzNOBodDNrlqX1SDgQ'},
+   crit:{
+     'Flutter waves (F waves)':['Regular sawtooth F waves at 250–350 bpm','Isoelectric baseline is lost','Typical (counterclockwise reentry): negative F waves in II, III, aVF; positive in V1','Atypical: variable F-wave polarity'],
+     'AV conduction and QRS':['QRS duration < 120 ms when conduction is normal','AV conduction ratio typically 2:1; 3:1, 4:1, and variable block are included'],
+     'Key points':['A ventricular rate of ~150 bpm should raise immediate suspicion for 2:1 atrial flutter','F waves may be concealed within QRS complexes or T waves']
+   },
+   cl:[{id:'afl1',t:'Are sawtooth F waves present in leads II, III, aVF?',s:'Typical counterclockwise flutter'},{id:'afl2',t:'Is the atrial rate 250–350 bpm?',s:'FF interval 170–240 ms'},{id:'afl3',t:'Is the isoelectric baseline lost?',s:'No flat baseline between F waves'},{id:'afl4',t:'Has the AV conduction ratio been determined?',s:'2:1, 3:1, 4:1, or variable block'},{id:'afl5',t:'If ventricular rate ~150 bpm, has 2:1 AFL been excluded?',s:'F waves may be hidden in QRS'}],
+   alerts:[{t:'d',m:'A ventricular rate of approximately 150 bpm should prompt immediate exclusion of 2:1 atrial flutter. F waves may be concealed within the QRS or ST segment.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part II)'},
+
+  // ── PSVT ──
+  {id:'PSVT',abbr:'PSVT',group:'supra',name:'Paroxysmal Supraventricular Tachycardia',cat:'Supraventricular',col:'amber',
+   rate:'150–250 bpm',rt:'sf',
+   params:[{l:'P-wave location',v:'In or just after QRS',t:'sw'},{l:'QRS duration',v:'< 120 ms*',t:'snt'},{l:'Onset',v:'Sudden start and stop',t:'sv2'}],
+   imgs:{ecg:'1K_IwBWnmy8LB_1MoN9xNJBQdXGa9seVK',strip:'1kMkVBifmM6J6cBaFPh_oFdZTvkNdFB6-'},
+   crit:{
+     'P-wave location by mechanism':['AVNRT: RP interval < 80 ms — P wave buried in or immediately after QRS (pseudo-r\' in V1; pseudo-S in inferior leads)','AVRT: RP interval 80–160 ms — retrograde P wave visible just after QRS','Atrial tachycardia: RP interval > PR interval'],
+     'QRS and rhythm':['QRS duration < 120 ms when atrioventricular conduction is normal','RR intervals are regular','Paroxysmal onset and termination (sudden start and stop)'],
+     'With aberrant conduction':['If bundle branch block is present, QRS duration ≥ 120 ms','Document the type of conduction abnormality (e.g., PSVT + RBBB)']
+   },
+   cl:[{id:'svt1',t:'Is the heart rate 150–250 bpm with regular RR intervals?',s:'Narrow complex tachycardia'},{id:'svt2',t:'Is the QRS duration < 120 ms?',s:'Note if aberrant conduction is present'},{id:'svt3',t:'Has the P-wave location been identified and RP interval measured?',s:'In QRS / after QRS / before QRS'},{id:'svt4',t:'Is the onset and termination sudden (paroxysmal)?',s:'Paroxysmal feature'},{id:'svt5',t:'If bundle branch block is present, has the conduction abnormality label also been added?',s:'e.g., PSVT + RBBB'}],
+   alerts:[{t:'i',m:'AVNRT is the most common mechanism. Pseudo-r\' in V1 and pseudo-S waves in inferior leads with a very short RP interval (< 80 ms) strongly suggest AVNRT.'},{t:'w',m:'When a wide-complex tachycardia cannot be differentiated from VT, treat as VT.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part II)'},
+
+  // ── VT ──
+  {id:'VT',abbr:'VT',group:'vent',name:'Ventricular Tachycardia',cat:'Ventricular',col:'red',
+   rate:'> 100 bpm',rt:'sf',
+   params:[{l:'QRS duration',v:'≥ 120 ms',t:'sd'},{l:'Non-sustained',v:'≥ 3 beats, ≥ 100 bpm',t:'sw'},{l:'AV dissociation',v:'Diagnostic when present',t:'sd'}],
+   imgs:{ecg:'10Gbfa2j1M2MjnUny0HayEgrZM0Jpv_Kl',strip:'1D8c3baM6zHw7NggCHyIBf8nKwtDm9V5l'},
+   crit:{
+     'Basic criteria':['QRS duration ≥ 120 ms','Heart rate > 100 bpm (typically 140–220 bpm)','Non-sustained VT: ≥ 3 consecutive ventricular beats at ≥ 100 bpm, self-terminating within 30 seconds'],
+     'Diagnostic features':['AV dissociation: P waves and QRS complexes occur independently — strongest diagnostic criterion','Fusion beat: hybrid QRS morphology from simultaneous supraventricular and ventricular activation','Capture beat: a supraventricular impulse momentarily captures the ventricle, producing a normal-width QRS','Negative concordance (V1–V6): all precordial QRS complexes point downward','Positive concordance (V1–V6): all precordial QRS complexes point upward'],
+     'Brugada criteria (4 steps)':['Step 1: Absence of RS complex in any precordial lead → VT','Step 2: RS interval ≥ 100 ms in any precordial lead → VT','Step 3: AV dissociation present → VT','Step 4: Morphology criteria for VT in V1 and V6 → VT; otherwise SVT with aberrancy']
+   },
+   cl:[{id:'vt1',t:'Is the QRS duration ≥ 120 ms?',s:'Wide complex tachycardia'},{id:'vt2',t:'Is the heart rate > 100 bpm?',s:'Distinguishes from AIVR'},{id:'vt3',t:'Has SVT with aberrant conduction been excluded?',s:'If not excludable, classify as VT'},{id:'vt4',t:'Is AV dissociation present?',s:'If present → VT confirmed'},{id:'vt5',t:'Are fusion beats or capture beats present?',s:'If present → VT confirmed'},{id:'vt6',t:'Has precordial concordance been assessed?',s:'Negative concordance → VT'},{id:'vt7',t:'Has non-sustained VT been considered?',s:'≥ 3 beats, ≥ 100 bpm, self-terminating'}],
+   alerts:[{t:'d',m:'In any wide-complex tachycardia where VT cannot be excluded, default to VT for management.'},{t:'i',m:'Once AV dissociation is identified, VT is confirmed — further Brugada steps are not required.'}],
+   ref:'Brugada et al. Circulation 1991; Surawicz et al. Circulation 2009 (Part IV)'},
+
+  // ── AIVR ──
+  {id:'AIVR',abbr:'AIVR',group:'vent',name:'Accelerated Idioventricular Rhythm',cat:'Ventricular',col:'red',
+   rate:'40–100 bpm',rt:'ss2',
+   params:[{l:'QRS duration',v:'≥ 120 ms',t:'sw'},{l:'Rate spectrum',v:'VER < AIVR < VT',t:'sv2'}],
+   imgs:{ecg:'10tfXXRXMHXBEfKBgZJbkm1mhXk5P5qiX',strip:'1qk2MFlw94C_uW0vlClaFLJ8hkQbKGSlP'},
+   crit:{
+     'Basic criteria':['QRS duration ≥ 120 ms (ventricular origin)','Heart rate 40–100 bpm — this range is the key distinguishing criterion','AV dissociation is often present'],
+     'Rate spectrum concept':['Ventricular escape rhythm (VER): 20–40 bpm','Accelerated idioventricular rhythm (AIVR): 40–100 bpm','Ventricular tachycardia (VT): > 100 bpm']
+   },
+   cl:[{id:'aivr1',t:'Is the QRS duration ≥ 120 ms?',s:'Ventricular origin'},{id:'aivr2',t:'Is the heart rate 40–100 bpm?',s:'Key criterion — < 40: VER; > 100: VT'},{id:'aivr3',t:'Is AV dissociation present?',s:'Supports ventricular origin'}],
+   alerts:[{t:'i',m:'Rate spectrum: VER (20–40 bpm) → AIVR (40–100 bpm) → VT (> 100 bpm). Classification is based primarily on rate.'}],
+   ref:'ACC/AHA 2018 Bradycardia/Conduction Guideline'},
+
+  // ── VER ──
+  {id:'VER',abbr:'VER',group:'vent',name:'Ventricular Escape Rhythm',cat:'Ventricular',col:'red',
+   rate:'20–40 bpm',rt:'ss2',
+   params:[{l:'QRS duration',v:'≥ 120 ms (atypical)',t:'sw'},{l:'Rate spectrum',v:'VER < AIVR < VT',t:'sv2'}],
+   imgs:{ecg:'1fX6yeN-GMb1iNwiFYSjCwUsf_cbUAHNX',strip:null},
+   crit:{
+     'Basic criteria':['QRS duration ≥ 120 ms with atypical (non-specific) morphology','Heart rate 20–40 bpm','Appears as a safety rhythm when higher-order pacemakers (sinus or junctional) fail'],
+     'Morphology distinction':['If the wide-complex escape rhythm shows a typical bundle branch block or fascicular block pattern, classify as Junctional rhythm (JR) with the corresponding conduction abnormality label','VER label applies only when the QRS morphology is atypical and non-specific']
+   },
+   cl:[{id:'ver1',t:'Is the heart rate 20–40 bpm?',s:'Distinguishes from AIVR (40–100 bpm)'},{id:'ver2',t:'Is the QRS duration ≥ 120 ms with atypical morphology?',s:'Non-specific wide QRS'},{id:'ver3',t:'Does the QRS show a typical BBB or fascicular block pattern?',s:'If typical → classify as JR + conduction abnormality'}],
+   alerts:[{t:'w',m:'If a wide-complex escape rhythm at 40–60 bpm displays a typical RBBB or LBBB pattern, classify it as Junctional rhythm (JR) plus the corresponding conduction abnormality — not VER.'}],
+   ref:'ACC/AHA 2018 Bradycardia/Conduction Guideline'},
+
+  // ── JR ──
+  {id:'JR',abbr:'JR',group:'junct',name:'Junctional Rhythm',cat:'Junctional',col:'blue',
+   rate:'40–60 bpm',rt:'ss2',
+   params:[{l:'QRS duration',v:'< 120 ms',t:'sn'},{l:'P waves',v:'Inverted or absent',t:'sv2'},{l:'Includes',v:'Junctional tachycardia, bradycardia',t:'snt'}],
+   imgs:{ecg:'1IViEVxpoyiUpIHa96RVbPdNCGda3ddah',strip:'1G1oZK6fMGPsvgk8qMjZMLctzHWo3Uvhr'},
+   crit:{
+     'Basic criteria':['QRS duration < 120 ms (normal conduction from the AV node)','Heart rate 40–60 bpm (junctional escape rate)','P waves are inverted in inferior leads (II, III, aVF), buried within the QRS, appear just after the QRS, or are absent'],
+     'Included variants':['Junctional escape rhythm: 40–60 bpm','Junctional bradycardia: < 40 bpm','Junctional tachycardia: > 60 bpm','Accelerated junctional rhythm: 60–100 bpm'],
+     'Co-labeling rules':['When an escape beat in 2nd- or 3rd-degree AV block is of junctional origin, add the JR label','When an escape beat in SSS is of junctional origin, add the JR label','If the entire strip shows only junctional bradycardia without visible P waves, SSS should be co-labeled']
+   },
+   cl:[{id:'jr1',t:'Is the QRS duration < 120 ms?',s:'Normal ventricular conduction from AV node'},{id:'jr2',t:'Are P waves inverted or absent?',s:'Check inferior leads II, III, aVF'},{id:'jr3',t:'Is this an escape beat in the context of AV block?',s:'Add JR label to AVB2 or AVB3'},{id:'jr4',t:'If the entire strip shows only junctional rhythm without P waves, has SSS been co-labeled?',s:''}],
+   alerts:[{t:'i',m:'In complete AV block (AVB3), if the escape beat has a typical RBBB morphology and rate ≥ 40 bpm, classify as JR + RBBB.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part III)'},
+
+  // ── SSS ──
+  {id:'SSS',abbr:'SSS',group:'brady',name:'Sick Sinus Syndrome',cat:'Bradycardia / AV block',col:'blue',
+   rate:'Variable (includes pauses)',rt:'sv2',
+   params:[{l:'Sinus pause',v:'PP interval > 3 s',t:'sd'},{l:'Included',v:'Pause / Arrest / SA exit block only',t:'sw'}],
+   imgs:{ecg:'1JXKSMwoTDLjtu2fGx8P0OnB1CM9PlPtj',strip:'1lIhGHS8Ysd151JdMa10jcxg_PJUw_GUt'},
+   crit:{
+     'Included patterns (these three only)':['Sinus pause / Sinus arrest: PP interval exceeds 3 seconds','SA exit block Type 1 (Wenckebach): progressively shorter PP intervals followed by a pause (complete absence of P-QRS)','SA exit block Type 2: constant PP intervals followed by a pause that is a multiple of the basic PP interval'],
+     'Not included':['Sinus bradycardia alone — classified under Sinus rhythm (SR)'],
+     'Co-labeling rules':['If an escape beat is present, determine whether it is junctional (add JR) or ventricular (add VER)','If the entire strip shows only junctional bradycardia without visible P waves, co-label SSS']
+   },
+   cl:[{id:'sss1',t:'Is there a PP interval exceeding 3 seconds?',s:'Sinus pause / Sinus arrest criterion'},{id:'sss2',t:'Is an SA exit block pattern present?',s:'Type 1: progressive PP shortening + pause; Type 2: pause = integer multiple of PP'},{id:'sss3',t:'Is sinus bradycardia alone present without pauses?',s:'If so → SR only, not SSS'},{id:'sss4',t:'Has the origin of the escape beat been determined?',s:'Add JR (junctional) or VER (ventricular)'},{id:'sss5',t:'If the entire strip shows only junctional bradycardia without P waves, has SSS been co-labeled?',s:''}],
+   alerts:[{t:'w',m:'Sinus bradycardia alone does not qualify as SSS — it is classified under Sinus rhythm (SR). SSS requires documented sinus pause, sinus arrest, or SA exit block.'}],
+   ref:'ACC/AHA 2018 Bradycardia/Conduction Guideline'},
+
+  // ── AVB1 ──
+  {id:'AVB1',abbr:'AVB1',group:'brady',name:'First-degree AV Block',cat:'Bradycardia / AV block',col:'blue',
+   rate:'Depends on underlying rhythm',rt:'snt',
+   params:[{l:'PR interval',v:'> 200 ms',t:'sw'},{l:'P:QRS ratio',v:'1:1',t:'sn'}],
+   imgs:{ecg:'1K2wlcSfzfJaji3SMLoi8Akincn6bPwnG',strip:'1g2krTFG1abKaN4wNR5rOit3jMfl5dqzz'},
+   crit:{
+     'Basic criteria':['PR interval > 200 ms, constant beat-to-beat','Every P wave is followed by a QRS complex (P:QRS = 1:1)','QRS duration is normal'],
+     'Co-labeling rule':['In 2nd- or 3rd-degree AV block, if all conducted beats have a PR interval > 200 ms, also label AVB1']
+   },
+   cl:[{id:'avb1a',t:'Is the PR interval > 200 ms and constant?',s:'Constant prolongation'},{id:'avb1b',t:'Does every P wave conduct to a QRS?',s:'P:QRS = 1:1'},{id:'avb1c',t:'In the context of AVB2/3, do all conducted beats have PR > 200 ms?',s:'If so, add AVB1 label'}],
+   alerts:[{t:'i',m:'In the presence of 2nd- or 3rd-degree AV block, if all conducted beats have a PR interval > 200 ms, co-label AVB1.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part V)'},
+
+  // ── AVB2 ──
+  {id:'AVB2',abbr:'AVB2',group:'brady',name:'Second-degree AV Block',cat:'Bradycardia / AV block',col:'blue',
+   rate:'May be bradycardic',rt:'ss2',
+   params:[{l:'Type',v:'Mobitz type 1 / type 2',t:'sv2'},{l:'Includes',v:'2:1 block, high-degree block',t:'sv2'}],
+   imgs:{ecg:'1qTaPt5QzJSXVYzEeT9bZPA3-9ECuLkVH',strip:'1sMDP6NRCBdgbD6PcHzq8XqGzs5j89GC_'},
+   crit:{
+     'Mobitz type 1 (Wenckebach)':['PR interval progressively lengthens until a QRS is dropped, then the cycle repeats','Block is typically at the AV node level; QRS is usually of normal duration'],
+     'Mobitz type 2':['PR interval is constant, then a QRS complex is suddenly dropped without warning','Block is typically at or below the His bundle; QRS may be widened'],
+     '2:1 and high-degree block':['2:1 block: one QRS for every two P waves — Mobitz type cannot be determined from a two-beat cycle alone','High-degree (high-grade) block: two or more consecutive P waves fail to conduct'],
+     'Co-labeling rules':['If an escape beat is present, add JR (junctional origin) or VER (ventricular origin)','If all conducted beats have PR > 200 ms, also label AVB1']
+   },
+   cl:[{id:'avb2a',t:'Are some P waves not followed by a QRS complex?',s:'Confirm dropped beats'},{id:'avb2b',t:'Does the PR interval progressively lengthen before the dropped beat?',s:'Yes → Mobitz type 1 (Wenckebach)'},{id:'avb2c',t:'Does the PR interval remain constant before the sudden dropped beat?',s:'Yes → Mobitz type 2'},{id:'avb2d',t:'Has QRS duration been assessed?',s:'Wide QRS suggests infra-Hisian block level'},{id:'avb2e',t:'Has the origin of any escape beat been determined?',s:'Add JR or VER label'}],
+   alerts:[{t:'i',m:''}],
+   ref:'Surawicz et al. Circulation 2009 (Part V)'},
+
+  // ── AVB3 ──
+  {id:'AVB3',abbr:'AVB3',group:'brady',name:'Complete AV Block',cat:'Bradycardia / AV block',col:'red',
+   rate:'Escape rhythm rate (20–60 bpm)',rt:'ss2',
+   params:[{l:'AV relationship',v:'Complete dissociation',t:'sd'},{l:'AF + regular RR',v:'AF with complete AV block',t:'sw'}],
+   imgs:{ecg:'1bAXpXRNRGEbhnfwiDfZTyub8LLvEtnXa',strip:'1uKEVfQSihXbn2mzwmqV8TDXTxo8t-YY8'},
+   crit:{
+     'Basic criteria':['P waves and QRS complexes are completely dissociated (AV dissociation)','Atrial rate is faster than the ventricular rate','The ventricles are maintained by a junctional or ventricular escape rhythm'],
+     'Escape rhythm classification':['Junctional escape: 40–60 bpm, narrow QRS → add JR label','Ventricular escape: 20–40 bpm, wide atypical QRS → add VER label','Wide-complex escape with typical BBB pattern → add JR + conduction abnormality label'],
+     'AF with complete AV block':['Atrial fibrillation with a slow and completely regular RR interval indicates AF with complete AV block']
+   },
+   cl:[{id:'avb3a',t:'Are P waves and QRS complexes completely independent?',s:'PR interval varies beat-to-beat'},{id:'avb3b',t:'Is the atrial rate faster than the ventricular rate?',s:'P rate > QRS rate'},{id:'avb3c',t:'Has the escape rhythm origin been determined?',s:'Add JR or VER label'},{id:'avb3d',t:'If AF is present, is the RR interval slow and completely regular?',s:'AF with complete AV block'},{id:'avb3e',t:'Does a typical BBB-pattern escape require JR + conduction abnormality labeling?',s:'e.g., JR + RBBB'}],
+   alerts:[{t:'i',m:'Example: AVB3 with RBBB-pattern escape at rate ≥ 40 bpm → classify as JR + RBBB.'}],
+   ref:'ACC/AHA 2018 Bradycardia/Conduction Guideline'},
+
+  // ── VPC ──
+  {id:'VPC',abbr:'VPC',group:'ectopic',name:'Ventricular Premature Complex',cat:'Ectopic beats',col:'amber',
+   rate:'Underlying rate normal',rt:'snt',
+   params:[{l:'Premature QRS',v:'≥ 120 ms, bizarre',t:'sw'},{l:'Compensatory pause',v:'Full compensatory pause',t:'sv2'}],
+   imgs:{ecg:'1vNiju5B1Rceut7AVaO_mlqhqYPzFvSdd',strip:'1hUHgyltNftZel6ZA1TjxwoGlPQvRXIUc'},
+   crit:{
+     'Basic criteria':['Premature, wide (≥ 120 ms), and bizarrely shaped QRS complex','No preceding P wave related to the premature beat','T-wave polarity is opposite to the main QRS deflection (secondary repolarization change)','Followed by a full compensatory pause'],
+     'Occurrence patterns':['Bigeminy: VPC alternating with every sinus beat','Trigeminy: VPC after every two sinus beats','Couplet: two consecutive VPCs','Triplet: three consecutive VPCs (qualifies as non-sustained VT)']
+   },
+   cl:[{id:'vpc1',t:'Is the premature QRS ≥ 120 ms with bizarre morphology?',s:'Wide, atypical QRS'},{id:'vpc2',t:'Is there no preceding P wave related to the premature beat?',s:'Ventricular origin'},{id:'vpc3',t:'Is it followed by a full compensatory pause?',s:'Compensatory pause'},{id:'vpc4',t:'Is the T wave opposite in polarity to the QRS?',s:'Secondary repolarization change'},{id:'vpc5',t:'Is an R-on-T pattern present?',s:'VPC falling on the peak of the T wave — risk of VF'}],
+   alerts:[{t:'d',m:'R-on-T phenomenon: a VPC landing on the peak of the T wave carries a risk of inducing ventricular fibrillation, particularly when the QT interval is prolonged.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part IV)'},
+
+  // ── APC ──
+  {id:'APC',abbr:'APC',group:'ectopic',name:'Atrial Premature Complex',cat:'Ectopic beats',col:'amber',
+   rate:'Underlying rate normal',rt:'snt',
+   params:[{l:'Premature P wave',v:'Different morphology',t:'sv2'},{l:'Includes',v:'Non-conducted, aberrant',t:'sv2'}],
+   imgs:{ecg:'1yElQ5SGG8GBzAr971-YUWrYqUsdZfZ8m',strip:'1wyoH4r9xG4MiHAb2tGj9NaoVLncwAXlw'},
+   crit:{
+     'Basic criteria':['Premature P wave with morphology different from the sinus P wave (ectopic atrial origin)','QRS duration is usually < 120 ms','Followed by an incomplete compensatory pause (sinus node is reset)'],
+     'Included variants':['Non-conducted APC: premature P wave with no subsequent QRS — may resemble a sinus pause','APC with aberrant conduction: wide QRS (Ashman phenomenon)']
+   },
+   cl:[{id:'apc1',t:'Does the premature P wave have a different morphology from the sinus P wave?',s:'Ectopic atrial origin'},{id:'apc2',t:'Is the QRS duration < 120 ms?',s:'Usually narrow complex'},{id:'apc3',t:'Is the compensatory pause incomplete?',s:'Sinus node reset → distinguishes APC from VPC'},{id:'apc4',t:'Is a premature P wave hidden within or just after the T wave?',s:'Non-conducted APC — may mimic a sinus pause'}],
+   alerts:[{t:'i',m:'A non-conducted APC can deform the T wave or hide within it, closely mimicking a sinus pause or sinus arrest. Careful inspection of the T-wave morphology is essential.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part II)'},
+
+  // ── PR ──
+  {id:'PR',abbr:'PR',group:'paced',name:'Paced Rhythm',cat:'Paced rhythm',col:'teal',
+   rate:'Per programmed rate',rt:'snt',
+   params:[{l:'Pacing spike',v:'Present',t:'si2'},{l:'Classification',v:'No A/V distinction required',t:'snt'}],
+   imgs:{ecg:'18e7XeWILFAqmjBqC-xP7IOxAPRDlXsNy',strip:'1zkclZBO8ONhwPOEObKGsZPpbxcnYZw23'},
+   crit:{
+     'Basic criteria':['A pacing spike (vertical artifact) precedes each paced event','Atrial pacing: spike precedes a P wave; Ventricular pacing: spike precedes a QRS complex','Atrial vs. ventricular pacing distinction is not required — use PR label alone'],
+     'Abnormal pacemaker findings':['Failure to capture: pacing spike present but not followed by a P wave or QRS','Failure to sense: pacing spike fires despite a preceding spontaneous beat']
+   },
+   cl:[{id:'pr1',t:'Is a pacing spike present before each paced event?',s:'Before P wave (atrial) or QRS (ventricular)'},{id:'pr2',t:'Is appropriate capture present after each spike?',s:'Check for failure to capture'},{id:'pr3',t:'Is sensing function normal?',s:'Check for failure to sense'}],
+   alerts:[{t:'i',m:'Atrial and ventricular pacing are not distinguished — a single PR label is used regardless of pacing mode.'}],
+   ref:'ACC/AHA 2018 Device Guideline'},
+
+  // ── WPW ──
+  {id:'WPW',abbr:'WPW',group:'wpw',name:'Wolff-Parkinson-White Syndrome',cat:'Pre-excitation',col:'purple',
+   rate:'Underlying sinus rate',rt:'sn',
+   params:[{l:'PR interval',v:'< 120 ms (short)',t:'sw'},{l:'Delta wave',v:'Present',t:'sw'},{l:'QRS duration',v:'≥ 120 ms',t:'sw'}],
+   imgs:{ecg:'1_ytcdXQ2ZLRxByeyXy6QgavP0xQJ508H',strip:'1o4UYgzkh41hVWLbaBHUk6J9_XTXV-AoS'},
+   crit:{
+     'Basic criteria':['PR interval < 120 ms (shortened due to accessory pathway conduction)','Delta wave: slurred upstroke at the onset of the QRS complex (ventricular pre-excitation)','QRS duration ≥ 120 ms (sum of delta wave and normally conducted portion)','Secondary ST-T changes in the direction opposite to the delta wave'],
+     'Co-labeling rules':['If the underlying rhythm is sinus rhythm, also label SR (SR + WPW)','AF with WPW syndrome may produce very rapid, wide-complex ventricular response via the accessory pathway']
+   },
+   cl:[{id:'wpw1',t:'Is the PR interval < 120 ms?',s:'Shortened PR interval'},{id:'wpw2',t:'Is a delta wave present?',s:'Slurred initial QRS upstroke'},{id:'wpw3',t:'Is the QRS duration ≥ 120 ms?',s:'Wide QRS including delta wave'},{id:'wpw4',t:'If the underlying rhythm is sinus rhythm, has SR also been labeled?',s:'SR + WPW'},{id:'wpw5',t:'Has the possibility of AF with WPW been assessed?',s:'Rapid wide-complex irregular rhythm'}],
+   alerts:[{t:'w',m:'In WPW syndrome with coexisting AF, rapid conduction via the accessory pathway can produce a very fast, wide-complex, irregular rhythm. This requires careful recognition.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part III)'},
+
+  // ── LBBB ──
+  {id:'LBBB',abbr:'LBBB',group:'cond',name:'Left Bundle Branch Block',cat:'Conduction abnormality',col:'purple',
+   rate:'Depends on underlying rhythm',rt:'snt',
+   params:[{l:'QRS duration',v:'≥ 120 ms (complete)',t:'sw'},{l:'V5/V6, I, aVL',v:'Broad notched R wave',t:'sw'}],
+   imgs:{ecg:'1vfPHmyYfaNt1eIDGpbF0BaubLxs0gBqI',strip:'1JOf-GNA9pM1eyc-ziyEg_2T-9krdSUxq'},
+   crit:{
+     'Basic criteria':['QRS duration ≥ 120 ms (complete LBBB only)','Leads I, aVL, V5, V6: broad, notched or slurred monophasic R wave; no q wave; no S wave','Lead V1: rS or QS pattern (predominantly negative)'],
+     'Exclusion':['Incomplete LBBB (QRS 100–119 ms) is not included in this label']
+   },
+   cl:[{id:'lbbb1',t:'Is the QRS duration ≥ 120 ms?',s:'Complete LBBB criterion'},{id:'lbbb2',t:'Are broad, notched R waves present in V5/V6, I, and aVL without q or S waves?',s:'Monophasic R, no q, no S'},{id:'lbbb3',t:'Does V1 show an rS or QS pattern?',s:'Predominantly negative'},{id:'lbbb4',t:'Are q waves absent in I and aVL?',s:'Absence required for LBBB'}],
+   alerts:[{t:'i',m:'Incomplete LBBB (QRS 100–119 ms) is not included in this label.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part VI)'},
+
+  // ── RBBB ──
+  {id:'RBBB',abbr:'RBBB',group:'cond',name:'Right Bundle Branch Block',cat:'Conduction abnormality',col:'purple',
+   rate:'Depends on underlying rhythm',rt:'snt',
+   params:[{l:'QRS duration',v:'≥ 120 ms (complete)',t:'sw'},{l:'V1',v:'rsr\'/RSR\' (M-shaped)',t:'sw'}],
+   imgs:{ecg:'1jill9aXF8cSclBhZRHIbzzj1VfTsBdf1',strip:'1YYe2VpmyJI650LkDMs7oTvcEMnToJqES'},
+   crit:{
+     'Basic criteria':['QRS duration ≥ 120 ms (complete RBBB only)','Leads V1, V2: rsr\', rsR\', rSR\', or qR pattern (M-shaped or rabbit-ear configuration)','Leads I, V6: broad, slurred terminal S wave'],
+     'Exclusion':['Incomplete RBBB (QRS 100–119 ms) is not included in this label']
+   },
+   cl:[{id:'rbbb1',t:'Is the QRS duration ≥ 120 ms?',s:'Complete RBBB criterion'},{id:'rbbb2',t:'Is an RSR\' pattern (M-shape) present in V1?',s:'rsr\', rsR\', rSR\', or qR'},{id:'rbbb3',t:'Is a broad terminal S wave present in leads I and V6?',s:'Slurred terminal S'}],
+   alerts:[{t:'i',m:'Incomplete RBBB (QRS 100–119 ms) is not included in this label.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part VI)'},
+
+  // ── LAFB ──
+  {id:'LAFB',abbr:'LAFB',group:'cond',name:'Left Anterior Fascicular Block',cat:'Conduction abnormality',col:'purple',
+   rate:'Depends on underlying rhythm',rt:'snt',
+   params:[{l:'QRS axis',v:'-45° to -90°',t:'sw'},{l:'QRS duration',v:'< 120 ms',t:'sn'}],
+   imgs:{ecg:'1x6UgbryfMEHi_BLuN7S1GaRBo4KQGzRh',strip:'1c_3bnDmu7gpriXlZekcpD0ZvC-DQmNZ0'},
+   crit:{
+     'Basic criteria':['Left-axis deviation: -45° to -90° (essential criterion)','Leads I, aVL: qR pattern (small q followed by a tall R wave)','Leads II, III, aVF: rS pattern (small r followed by a deep S wave)','QRS duration < 120 ms (unless RBBB is also present)']
+   },
+   cl:[{id:'lafb1',t:'Is the QRS axis between -45° and -90°?',s:'Essential criterion'},{id:'lafb2',t:'Is a qR pattern present in leads I and aVL?',s:'Small q then tall R'},{id:'lafb3',t:'Is an rS pattern present in leads II, III, and aVF?',s:'Small r then deep S'},{id:'lafb4',t:'Have other causes of left-axis deviation been excluded?',s:'LVH, inferior MI, WPW syndrome'}],
+   alerts:[{t:'i',m:'RBBB + LAFB = bifascicular block. Monitoring for progression to complete AV block may be considered in appropriate clinical context.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part VI)'},
+
+  // ── LPFB ──
+  {id:'LPFB',abbr:'LPFB',group:'cond',name:'Left Posterior Fascicular Block',cat:'Conduction abnormality',col:'purple',
+   rate:'Depends on underlying rhythm',rt:'snt',
+   params:[{l:'QRS axis',v:'+90° to +180°',t:'sw'},{l:'QRS duration',v:'< 120 ms',t:'sn'}],
+   imgs:{ecg:'1az_JuiJ6Aab3A-leepyIlt-tzAZCeUrN',strip:'1s1qxCkQ9hGAyP8gysxgwm9bO3tYlW3lo'},
+   crit:{
+     'Basic criteria':['Right-axis deviation: +90° to +180° (essential criterion)','Leads I, aVL: rS pattern (small r followed by a deep S wave)','Leads II, III, aVF: qR pattern (small q followed by a tall R wave)','QRS duration < 120 ms'],
+     'Exclusion diagnosis':['Other causes of right-axis deviation must be excluded before diagnosing LPFB: right ventricular hypertrophy, cor pulmonale, lateral wall MI, vertical heart axis','Isolated LPFB is uncommon']
+   },
+   cl:[{id:'lpfb1',t:'Is the QRS axis between +90° and +180°?',s:'Essential criterion'},{id:'lpfb2',t:'Is an rS pattern present in leads I and aVL?',s:'Small r then deep S'},{id:'lpfb3',t:'Is a qR pattern present in leads II, III, and aVF?',s:'Small q then tall R'},{id:'lpfb4',t:'Have other causes of right-axis deviation been excluded?',s:'RVH, cor pulmonale, vertical heart, lateral MI'}],
+   alerts:[{t:'w',m:'LPFB is a diagnosis of exclusion. It can only be diagnosed after ruling out right ventricular hypertrophy, cor pulmonale, vertical heart axis, and lateral wall MI. Isolated LPFB is uncommon.'}],
+   ref:'Surawicz et al. Circulation 2009 (Part VI)'}
+];
+
+// ══════════════════════════════════════════════
+// ECG WAVE GENERATOR (schematic)
+// ══════════════════════════════════════════════
+function makeECG(type,W,H){
+  const cy=H/2,a=H*0.38;
+  const P={
+    normal:()=>{let d=`M0 ${cy}`;for(let i=0;i<4;i++){const x=i*(W/4);d+=` L${x+8} ${cy} L${x+12} ${cy-a*.2} L${x+16} ${cy} L${x+20} ${cy+a*.1} L${x+23} ${cy-a} L${x+26} ${cy+a*.38} L${x+30} ${cy} L${x+40} ${cy-a*.12} L${x+50} ${cy}`;}return d;},
+    af:()=>{let d=`M0 ${cy}`;for(let x=0;x<W;x+=2){const y=cy+(Math.sin(x*.4)*a*.07+Math.sin(x*.7)*a*.05)+(Math.random()-.5)*1.2;if(x%58<2){d+=` L${x} ${cy} L${x+3} ${cy-a} L${x+5} ${cy+a*.35} L${x+8} ${cy}`;}else{d+=` L${x} ${y}`;}}return d;},
+    afl:()=>{let d=`M0 ${cy}`;for(let x=0;x<W;x++){const s=((x*.085)%1)*2-1,y=cy+s*a*.22;if(x%48<2){d+=` L${x} ${cy} L${x+3} ${cy-a} L${x+5} ${cy+a*.35} L${x+7} ${cy}`;}else{d+=` L${x} ${y}`;}}return d;},
+    svt:()=>{let d=`M0 ${cy}`;for(let i=0;i<7;i++){const x=i*(W/7);d+=` L${x+5} ${cy} L${x+8} ${cy-a} L${x+10} ${cy+a*.32} L${x+13} ${cy}`;}return d;},
+    vt:()=>{let d=`M0 ${cy}`;for(let i=0;i<4;i++){const x=i*(W/4);d+=` L${x+4} ${cy} L${x+9} ${cy-a*1.25} L${x+16} ${cy+a*.48} L${x+25} ${cy-a*.18} L${x+34} ${cy}`;}return d;},
+    aivr:()=>{let d=`M0 ${cy}`;for(let i=0;i<3;i++){const x=i*(W/3);d+=` L${x+10} ${cy} L${x+15} ${cy-a*1.08} L${x+22} ${cy+a*.42} L${x+30} ${cy}`;}return d;},
+    sss:()=>{let d=`M0 ${cy} L8 ${cy} L12 ${cy-a*.2} L16 ${cy} L20 ${cy+a*.1} L23 ${cy-a} L26 ${cy+a*.38} L30 ${cy} L40 ${cy-a*.12} L52 ${cy}`;const g=W*.46;d+=` L${g} ${cy}`;const ge=g+62;d+=` L${ge} ${cy} L${ge+4} ${cy-a*.2} L${ge+8} ${cy} L${ge+12} ${cy+a*.1} L${ge+15} ${cy-a} L${ge+18} ${cy+a*.38} L${ge+22} ${cy}`;return d;},
+    wpw:()=>{let d=`M0 ${cy}`;for(let i=0;i<3;i++){const x=i*(W/3);d+=` L${x+8} ${cy} L${x+12} ${cy-a*.18} L${x+15} ${cy-a*.25} L${x+17} ${cy-a*1.02} L${x+20} ${cy+a*.4} L${x+24} ${cy} L${x+34} ${cy-a*.12} L${x+44} ${cy}`;}return d;},
+    avb1:()=>{let d=`M0 ${cy}`;for(let i=0;i<3;i++){const x=i*(W/3);d+=` L${x+4} ${cy} L${x+8} ${cy-a*.18} L${x+12} ${cy} L${x+28} ${cy+a*.1} L${x+31} ${cy-a} L${x+34} ${cy+a*.38} L${x+38} ${cy} L${x+46} ${cy-a*.12} L${x+54} ${cy}`;}return d;},
+    avb2:()=>{let d=`M0 ${cy} L5 ${cy} L9 ${cy-a*.18} L13 ${cy} L22 ${cy+a*.1} L25 ${cy-a} L28 ${cy+a*.38} L32 ${cy} L40 ${cy-a*.12} L50 ${cy} L56 ${cy} L60 ${cy-a*.18} L64 ${cy} L70 ${cy} L74 ${cy-a*.18} L78 ${cy} L84 ${cy+a*.1} L87 ${cy-a} L90 ${cy+a*.38} L94 ${cy} L102 ${cy} L106 ${cy-a*.18} L110 ${cy}`;return d;},
+    avb3:()=>{let d=`M0 ${cy}`;const pR=13,qR=21;for(let x=0;x<W;x++){if(x%pR<3){d+=` L${x} ${cy-a*.18} L${x+1} ${cy}`;}if(x%qR<2){d+=` L${x} ${cy+a*.1} L${x+1} ${cy-a*1.08} L${x+2} ${cy+a*.42} L${x+3} ${cy}`;}if(x%2===0)d+=` L${x} ${cy}`;}return d;},
+    lbbb:()=>{let d=`M0 ${cy}`;for(let i=0;i<3;i++){const x=i*(W/3);d+=` L${x+6} ${cy} L${x+10} ${cy-a*.18} L${x+12} ${cy} L${x+15} ${cy-a*.55} L${x+17} ${cy-a} L${x+19} ${cy-a*.75} L${x+22} ${cy-a} L${x+25} ${cy+a*.42} L${x+31} ${cy} L${x+40} ${cy+a*.22} L${x+50} ${cy}`;}return d;},
+    rbbb:()=>{let d=`M0 ${cy}`;for(let i=0;i<3;i++){const x=i*(W/3);d+=` L${x+6} ${cy} L${x+8} ${cy-a*.48} L${x+10} ${cy-a*.18} L${x+12} ${cy-a*.88} L${x+15} ${cy+a*.38} L${x+18} ${cy} L${x+26} ${cy-a*.12} L${x+36} ${cy}`;}return d;},
+    lafb:()=>{let d=`M0 ${cy}`;for(let i=0;i<3;i++){const x=i*(W/3);d+=` L${x+6} ${cy} L${x+10} ${cy-a*.18} L${x+14} ${cy} L${x+18} ${cy+a*.1} L${x+21} ${cy-a*.38} L${x+24} ${cy+a*.38} L${x+30} ${cy}`;}return d;},
+    lpfb:()=>{let d=`M0 ${cy}`;for(let i=0;i<3;i++){const x=i*(W/3);d+=` L${x+6} ${cy} L${x+10} ${cy-a*.1} L${x+14} ${cy} L${x+18} ${cy-a*.1} L${x+21} ${cy-a*.98} L${x+24} ${cy+a*.48} L${x+30} ${cy}`;}return d;},
+    vpc:()=>{let d=`M0 ${cy} L10 ${cy} L14 ${cy-a*.18} L18 ${cy} L22 ${cy+a*.1} L25 ${cy-a} L28 ${cy+a*.38} L32 ${cy} L40 ${cy-a*.12} L50 ${cy} L55 ${cy} L58 ${cy+a*.12} L62 ${cy-a*1.38} L68 ${cy+a*.48} L73 ${cy} L86 ${cy+a*.28} L96 ${cy} L104 ${cy} L108 ${cy-a*.18} L112 ${cy} L116 ${cy+a*.1} L119 ${cy-a} L122 ${cy+a*.38} L126 ${cy}`;return d;},
+    apc:()=>{let d=`M0 ${cy} L10 ${cy} L14 ${cy-a*.18} L18 ${cy} L22 ${cy+a*.1} L25 ${cy-a} L28 ${cy+a*.38} L32 ${cy} L40 ${cy-a*.12} L50 ${cy} L56 ${cy} L60 ${cy-a*.28} L64 ${cy} L67 ${cy+a*.1} L70 ${cy-a} L73 ${cy+a*.38} L76 ${cy} L84 ${cy-a*.12} L92 ${cy} L100 ${cy} L104 ${cy-a*.18} L108 ${cy} L112 ${cy+a*.1} L115 ${cy-a} L118 ${cy+a*.38} L122 ${cy}`;return d;},
+    ver:()=>{let d=`M0 ${cy}`;for(let i=0;i<2;i++){const x=i*(W/2);d+=` L${x+22} ${cy} L${x+27} ${cy-a*1.28} L${x+35} ${cy+a*.48} L${x+43} ${cy-a*.18} L${x+54} ${cy}`;}return d;},
+    jr:()=>{let d=`M0 ${cy}`;for(let i=0;i<3;i++){const x=i*(W/3);d+=` L${x+14} ${cy} L${x+17} ${cy+a*.1} L${x+20} ${cy-a} L${x+23} ${cy+a*.38} L${x+27} ${cy} L${x+35} ${cy-a*.12} L${x+44} ${cy}`;}return d;},
+    pr:()=>{let d=`M0 ${cy}`;for(let i=0;i<3;i++){const x=i*(W/3);d+=`M${x+8} ${cy+a*.42} L${x+8} ${cy-a*.42} M${x+8} ${cy} L${x+12} ${cy-a*.18} L${x+16} ${cy} L${x+18} ${cy+a*.1} L${x+21} ${cy-a*1.08} L${x+24} ${cy+a*.42} L${x+28} ${cy} L${x+36} ${cy+a*.18} L${x+46} ${cy}`;}return d;}
+  };
+  const ecgTypeMap={SR:'normal',AF:'af',AFL:'afl',PSVT:'svt',VT:'vt',AIVR:'aivr',VER:'ver',JR:'jr',SSS:'sss',AVB1:'avb1',AVB2:'avb2',AVB3:'avb3',VPC:'vpc',APC:'apc',PR:'pr',WPW:'wpw',LBBB:'lbbb',RBBB:'rbbb',LAFB:'lafb',LPFB:'lpfb'};
+  const k=ecgTypeMap[type]||'normal';
+  return (P[k]||P.normal)();
+}
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let currentId=null, checkState={}, theme='light';
+
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
+function goHome(){
+  document.getElementById('pageWelcome').classList.add('active');
+  document.getElementById('pageRhythm').classList.remove('active');
+  document.getElementById('bc').style.display='none';
+}
+function enterDomain(id){
+  if(id==='rhythm'){
+    document.getElementById('pageWelcome').classList.remove('active');
+    document.getElementById('pageRhythm').classList.add('active');
+    document.getElementById('bc').style.display='flex';
+    document.getElementById('bcD').textContent='Rhythm & Conduction';
+    buildNav();
+  }
+}
+function buildNav(filter=''){
+  const fl=filter.toLowerCase();
+  const nav=document.getElementById('navList');
+  nav.innerHTML='';
+  let any=false;
+  GROUPS.forEach(g=>{
+    const items=RHYTHMS.filter(r=>r.group===g.id&&(!fl||r.abbr.toLowerCase().includes(fl)||r.name.toLowerCase().includes(fl)));
+    if(!items.length)return;
+    any=true;
+    const lbl=document.createElement('div');lbl.className='sb-g';lbl.textContent=g.label;nav.appendChild(lbl);
+    items.forEach(r=>{
+      const el=document.createElement('div');
+      el.className='sb-i'+(r.id===currentId?' act':'');
+      el.onclick=()=>{currentId=r.id;buildNav(filter);renderDetail(r.id);};
+      const dc=r.id===currentId?`var(${CM[r.col]?.v||'--ac'})`:'var(--bd2)';
+      el.innerHTML=`<span class="sb-ab">${r.abbr}</span><span class="sb-nb">${r.name}</span><span class="sb-dot" style="background:${dc}"></span>`;
+      nav.appendChild(el);
+    });
+  });
+  if(!any){const m=document.createElement('div');m.style.cssText='padding:18px 12px;font-size:11px;color:var(--t4);font-family:var(--mono);';m.textContent='No results';nav.appendChild(m);}
+}
+
+// ══════════════════════════════════════════════
+// DETAIL
+// ══════════════════════════════════════════════
+function renderDetail(id){
+  const r=RHYTHMS.find(x=>x.id===id);if(!r)return;
+  const panel=document.getElementById('mainPanel');
+  // stat strip
+  const stats=[
+    `<div class="si"><div class="sl">Heart rate</div><div class="sv ${r.rt}">${r.rate}</div></div>`,
+    ...r.params.map(p=>`<div class="si"><div class="sl">${p.l}</div><div class="sv ${p.t}">${p.v}</div></div>`),
+    `<div class="si" style="flex:0 0 auto;min-width:110px;"><div class="sl">Reference</div><div style="font-family:var(--mono);font-size:9px;color:var(--t4);margin-top:3px;line-height:1.4;">${r.ref}</div></div>`
+  ].join('');
+
+  // image accordion — 12-lead ECG on top, rhythm strip below, both collapsible
+  const hasStrip = r.imgs.strip !== null;
+  const chevron = `<svg class="img-label-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,4 6,8 10,4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const imgCardHTML=`
+  <div class="img-stack">
+    <div class="img-section">
+      <div class="img-label" onclick="toggleImg('ecg-${id}')">
+        <span>12-lead ECG</span>
+        <svg class="img-label-chevron" id="chev-ecg-${id}" width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,4 6,8 10,4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="img-body" id="ecg-${id}">
+        <img src="${driveImg(r.imgs.ecg)}" alt="${r.abbr} 12-lead ECG" loading="lazy" onerror="driveFallback(this,'${r.imgs.ecg}')">
+        <div class="img-none" style="display:none;">Image unavailable</div>
+      </div>
+    </div>
+    <div class="img-section">
+      <div class="img-label" onclick="toggleImg('strip-${id}')">
+        <span>Rhythm strip</span>
+        <svg class="img-label-chevron" id="chev-strip-${id}" width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,4 6,8 10,4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="img-body" id="strip-${id}">
+        ${hasStrip
+          ? `<img src="${driveImg(r.imgs.strip)}" alt="${r.abbr} rhythm strip" loading="lazy" onerror="driveFallback(this,'${r.imgs.strip}')"><div class="img-none" style="display:none;">Image unavailable</div>`
+          : `<div class="img-none">Rhythm strip not available for this class</div>`}
+      </div>
+    </div>
+  </div>`;
+
+  // criteria
+  const entries=Object.entries(r.crit||{});
+  let critHTML='<div class="cg">';
+  entries.forEach(([title,items],i)=>{
+    const dc=DC[i%DC.length];
+    const full=entries.length===1||(entries.length%2===1&&i===entries.length-1);
+    critHTML+=`<div class="cc${full?' full':''}">
+      <div class="ch2"><span class="cd" style="background:var(${dc})"></span>${title}</div>
+      <ul class="cl2">${items.map(t=>`<li class="ci"><span class="cb2">›</span><span>${t}</span></li>`).join('')}</ul>
+    </div>`;
+  });
+  critHTML+='</div>';
+
+  // alerts — filter out empty ones
+  const validAlerts=(r.alerts||[]).filter(a=>a.m&&a.m.trim());
+  let alertHTML='';
+  if(validAlerts.length){
+    alertHTML=`<div class="al">${validAlerts.map(a=>`
+      <div class="a ${a.t}">
+        <span class="ai">${a.t==='d'?'⚠':a.t==='i'?'ℹ':'⚡'}</span>
+        <span>${a.m}</span>
+      </div>`).join('')}</div>`;
+  }
+
+  // checklist
+  const state=checkState[id]||{};
+  const done=r.cl.filter(c=>state[c.id]).length;
+  const pct=r.cl.length?Math.round((done/r.cl.length)*100):0;
+  const clHTML=`
+  <div class="ck">
+    <div class="ckh">
+      <span class="ckt">Annotation checklist</span>
+      <div class="pr2"><div class="pb"><div class="pf" id="pb-${id}" style="width:${pct}%"></div></div><span class="pt" id="pt-${id}">${done}/${r.cl.length}</span></div>
+    </div>
+    <div class="ckb">${r.cl.map(c=>`
+      <div class="cr${state[c.id]?' dn':''}" onclick="toggleCk('${id}','${c.id}')">
+        <div class="cx"><svg width="9" height="7" viewBox="0 0 9 7" fill="none"><polyline points="1,3.5 3.5,6 8,1" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="ct"><span class="cl3">${c.t}</span>${c.s?`<span class="cs">${c.s}</span>`:''}</div>
+      </div>`).join('')}
+    </div>
+    <div class="ckf"><button class="br" onclick="resetCk('${id}')">Reset</button></div>
+  </div>`;
+
+  panel.innerHTML=`<div class="dw">
+    <div class="dh"><div class="dh-l">
+      <div class="dh-ab">${r.abbr}</div>
+      <div class="dh-nm">${r.name}</div>
+      <span class="cb" style="background:${cb(r.col)};border-color:${cbo(r.col)};color:${cv(r.col)};">${r.cat}</span>
+    </div></div>
+    <div class="ss">${stats}</div>
+    ${imgCardHTML}
+    ${critHTML}
+    ${alertHTML}
+    ${clHTML}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// IMAGE ACCORDION
+// ══════════════════════════════════════════════
+function toggleImg(bodyId){
+  const body=document.getElementById(bodyId);
+  if(!body)return;
+  const isOpen=body.classList.toggle('open');
+  const chevId='chev-'+bodyId;
+  const chev=document.getElementById(chevId);
+  if(chev)chev.classList.toggle('open',isOpen);
+}
+
+// ══════════════════════════════════════════════
+// CHECKLIST
+// ══════════════════════════════════════════════
+function toggleCk(rid,cid){
+  if(!checkState[rid])checkState[rid]={};
+  checkState[rid][cid]=!checkState[rid][cid];
+  const r=RHYTHMS.find(x=>x.id===rid);
+  const done=r.cl.filter(c=>checkState[rid][c.id]).length;
+  const pct=Math.round((done/r.cl.length)*100);
+  const pb=document.getElementById('pb-'+rid);const pt=document.getElementById('pt-'+rid);
+  if(pb)pb.style.width=pct+'%';if(pt)pt.textContent=`${done}/${r.cl.length}`;
+  const row=document.querySelector(`.cr[onclick="toggleCk('${rid}','${cid}')"]`);
+  if(row)row.classList.toggle('dn',!!checkState[rid][cid]);
+}
+function resetCk(rid){
+  checkState[rid]={};
+  const r=RHYTHMS.find(x=>x.id===rid);
+  const pb=document.getElementById('pb-'+rid);const pt=document.getElementById('pt-'+rid);
+  if(pb)pb.style.width='0%';if(pt)pt.textContent=`0/${r.cl.length}`;
+  document.querySelectorAll('.cr').forEach(el=>el.classList.remove('dn'));
+}
+
+// ══════════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════════
+function setTheme(t){
+  theme=t;document.body.setAttribute('data-theme',t);
+  const ic=document.getElementById('themeIcon');
+  if(t==='dark'){ic.innerHTML=`<path d="M12 3a6 6 0 009 9 9 9 0 11-9-9z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+  }else{ic.innerHTML=`<path d="M8 2v1M8 13v1M2 8H1M15 8h-1M4.22 4.22l-.71-.71M12.49 12.49l-.71-.71M12.49 4.22l.71-.71M3.51 12.49l-.71.71M11 8a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"/>`;}
+}
+document.getElementById('themeBtn').onclick=()=>setTheme(theme==='light'?'dark':'light');
+document.getElementById('searchInput').oninput=e=>buildNav(e.target.value);
+setTheme('light');
+</script>
+</body>
+</html>
